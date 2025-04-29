@@ -140,7 +140,7 @@ h1, h2, h3, h4, h5,
 
 .site-section {
   padding: 2.5em 0; }
-  @media (min-width: 768px) {
+  @media (min-width: 768px) { /*@media responsive mean if width is smaller than 768px then do below*/
     .site-section {
       padding: 5em 0; } }
   .site-section.site-section-sm {
@@ -942,3 +942,8 @@ h1, h2, h3, h4, h5,
 
 .footer-section {
   padding-top: 12rem !important; }
+
+
+  #nav-login {
+    padding-bottom: 10px;
+  }
