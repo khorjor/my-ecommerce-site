@@ -1529,52 +1529,66 @@
                 </div>
 
                 <div role="tabpanel" class="tab-pane" id="register">
-                  <form method="post" data-aos="fade">
+                  <form id="registration-form" method="post" data-aos="fade" onsubmit="submitRegistration(event)">
                     <div class="form-group row">
                       <div class="col-md-6 mb-3 mb-lg-0">
-                        <input type="text" class="form-control" placeholder="First name">
+                        <input type="text" id="First-name" class="form-control" placeholder="First name">
                       </div>
                       <div class="col-md-6">
-                        <input type="text" class="form-control" placeholder="Last name">
+                        <input type="text" id="Last-name" class="form-control" placeholder="Last name">
+                      </div>
+                    </div>
+                
+                    <div class="form-group row">
+                      <div class="col-md-12">
+                        <select id="Occupation-category" name="OccupationCatSelect" class="form-control"
+                          onchange="loadOccupationsFromCategory()">
+                          <option value="">Occupation Category</option>
+                        </select>
+                      </div>
+                    </div>
+                
+                    <div class="form-group row">
+                      <div class="col-md-12">
+                        <select id="Occupation-select" name="OccupationSelect" class="form-control" onchange="show()">
+                          <option value="">Occupation</option>
+                        </select>
+                      </div>
+                    </div>
+                
+                    <div class="form-group row">
+                      <div class="col-md-12">
+                        <input type="email" id="Email" class="form-control" placeholder="Email">
                       </div>
                     </div>
 
                     <div class="form-group row">
                       <div class="col-md-12">
-                        <input type="text" class="form-control" placeholder="Occupation">
+                        <input type="password" id="Password" class="form-control" placeholder="Password">
                       </div>
                     </div>
-
-                    <div class="form-group row">
-                      <div class="col-md-12">
-                        <input type="email" class="form-control" placeholder="Email">
-                      </div>
-                    </div>
-
+                
                     <div class="form-group row">
                       <div class="col-md-6">
-
                         <input type="submit" class="btn btn-primary py-3 px-5 btn-block" value="Register">
                       </div>
                     </div>
-
                   </form>
-
                 </div>
 
                 <div role="tabpanel" class="tab-pane" id="sign-in">
-                  <form method="post" data-aos="fade">
+                  <form method="post" data-aos="fade" onsubmit="submitLogin(event)">
 
 
                     <div class="form-group row">
                       <div class="col-md-12">
-                        <input type="text" class="form-control" placeholder="Username">
+                        <input type="email" class="form-control" id="Login-email" placeholder="Username">
                       </div>
                     </div>
 
                     <div class="form-group row">
                       <div class="col-md-12">
-                        <input type="password" class="form-control" placeholder="Password">
+                        <input type="password" class="form-control" id="Login-password" placeholder="Password">
                       </div>
                     </div>
 
@@ -1755,13 +1769,99 @@
         })
     }
 
+    async function loadOccupationCat(url) {
+      try {
+        const response = await fetch(url);
+        const jsonObj = await response.json();
+
+        const select = document.getElementById("Occupation-category");
+        jsonObj.occupationCategory.forEach(cat => {
+          const option = document.createElement("option");
+          option.textContent = cat;
+          option.value = cat;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error("Error loading occupation categories:", error);
+      }
+    }
+
+    function loadOccupationsFromCategory() {
+      const categorySelect = document.getElementById("Occupation-category");
+      const selectedCategory = categorySelect.value.toLowerCase();
+      const occupationSelect = document.getElementById("Occupation-select");
+
+      occupationSelect.innerHTML = '<option value="">Occupation</option>';
+
+      if (selectedCategory === "") return;
+
+      fetch(`./json/${selectedCategory}.json`)
+        .then(response => response.json())
+        .then(data => {
+          data.occupation.forEach(occupation => {
+            const option = document.createElement("option");
+            option.value = occupation;
+            option.textContent = occupation;
+            occupationSelect.appendChild(option);
+          });
+        })
+        .catch(error => console.error("Error loading occupation data:", error));
+    }
+
+    async function submitLogin(event) {
+      event.preventDefault();
+
+      const email = document.getElementById("Login-email").value.trim();
+      const password = document.getElementById("Login-password").value.trim();
+
+      if (!email || !password) {
+        alert("Please fill in both email and password.");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:5000/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const result = await response.text();
+        alert(result);
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("Something went wrong while logging in.");
+      }
+    }
+
     function show() {
       const select = document.getElementById("subject-select");
       console.log(select.value)
     }
+
   </script>
 
   <script>
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+
+      const result = await response.json();
+      alert(result.message);
+    });
+
+  </script>
+
+  <script>
+
     window.onload = function () {
 
       const contact = document.getElementById("contact-head");
@@ -1773,34 +1873,37 @@
       //loadSubject('./json/contact_subject.json')
       // loadSubject('http://localhost:4040/');
       loadSubject('http://localhost:4000/api/subject');
+      loadOccupationCat('http://localhost:4000/api/occupation-cat');
+
+
 
       document.getElementById('subscribe-form').addEventListener('submit', e => subscribeSubmit(e));
 
     };
 
     //AJAX function
-    const ajax = async(config) => {
-        const request = await fetch(config.url, { 
-          method: config.method,
-          headers: {
-            'Accept' : 'application/json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(config.data)
-        });
-        const response = await request.json()
-        console.log(response);
-        return response;
+    const ajax = async (config) => {
+      const request = await fetch(config.url, {
+        method: config.method,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(config.data)
+      });
+      const response = await request.json()
+      console.log(response);
+      return response;
     }
 
-    function submitContact(){
+    function submitContact() {
       const data = {
         fname: document.getElementById('fname').value,
         lname: document.getElementById('lname').value,
         email: document.getElementById('email').value,
         subject: document.getElementById('subject-select').value,
         message: document.getElementById('message').value,
-        
+
       }
       console.log(data);
 
@@ -1812,22 +1915,62 @@
 
       console.log(response)
     }
-    
-    async function subscribeSubmit(e){
+
+    async function subscribeSubmit(e) {
       e.preventDefault();
       console.log('Hi')
-      const email = { email: document.getElementById('subscribe-email').value};
+      const email = { email: document.getElementById('subscribe-email').value };
       console.log(email);
       const response = await fetch('http://localhost:4000/api/subscribe', {
         method: 'POST',
-        headers: {'Content-Type' : 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(email)
       });
 
       console.log(response);
     }
-  
+
+    async function submitRegistration(event) {
+      event.preventDefault(); // stop normal form submission
+
+      const fname = document.getElementById("First-name").value.trim();
+      const lname = document.getElementById("Last-name").value.trim();
+      const email = document.getElementById("Email").value.trim();
+      const password = document.getElementById("Password").value.trim();
+      const category = document.getElementById("Occupation-category").value;
+      const occupation = document.getElementById("Occupation-select").value;
+
+      if (!fname || !lname || !email || !password || !category || !occupation) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:5000/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName: fname,
+            lastName: lname,
+            email,
+            password,
+            category,
+            occupation
+          }),
+        });
+
+        const result = await response.text();
+        alert(result);
+      } catch (error) {
+        console.error("Registration error:", error);
+        alert("Registration failed.");
+      }
+    }
+
+    document.querySelector('form').addEventListener('submit', submitRegistration);
+
   </script>
+
 
 </body>
 
